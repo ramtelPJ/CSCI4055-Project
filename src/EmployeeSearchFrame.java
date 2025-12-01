@@ -2,10 +2,14 @@
  * Author: Lon Smith, Ph.D.
  * Description: This is the framework for the database program. Additional requirements and functionality
  *    are to be built by you and your group.
+ *    
+ * Functionality added to the framework of database program
  */
 
 import java.awt.EventQueue;
 import javax.swing.ListSelectionModel;
+import javax.swing.JOptionPane;
+import java.util.ArrayList;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
@@ -23,7 +27,8 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
 public class EmployeeSearchFrame extends JFrame {
-
+	
+	private DatabaseManager db = new DatabaseManager();
 	private static final long serialVersionUID = 1L;
 	private JPanel contentPane;
 	private JTextField txtDatabase;
@@ -77,16 +82,24 @@ public class EmployeeSearchFrame extends JFrame {
 		 * departments and projects from your entered database name.
 		 */
 		btnDBFill.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				String[] dept = {"Headquarters", "Reorganization"};	
-				for(int i = 0; i < dept.length; i++) {
-					department.addElement(dept[i]);
-				}
-				String[] prj = {"ProdoctX", "ProductY", "ProductZ"};
-				for(int j = 0; j < prj.length; j++) {
-					project.addElement(prj[j]);
-				}
-			}
+		    public void actionPerformed(ActionEvent e) {
+
+		        String dbName = txtDatabase.getText();
+
+		        if (!db.connect(dbName)) {
+		            JOptionPane.showMessageDialog(null, "Could not connect to database");
+		            return;
+		        }
+
+		        department.clear();
+		        project.clear();
+
+		        ArrayList<String> deptList = db.getDepartments();
+		        for (String d : deptList) department.addElement(d);
+
+		        ArrayList<String> projList = db.getProjects();
+		        for (String p : projList) project.addElement(p);
+		    }
 		});
 		
 		btnDBFill.setFont(new Font("Times New Roman", Font.BOLD, 12));
@@ -134,9 +147,20 @@ public class EmployeeSearchFrame extends JFrame {
 		
 		JButton btnSearch = new JButton("Search");
 		btnSearch.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent e) {
-				textAreaEmployee.setText("John Smith\nFranklin Wong");
-			}
+		    public void actionPerformed(ActionEvent e) {
+		        ArrayList<String> selectedDepts = new ArrayList<>(lstDepartment.getSelectedValuesList());
+		        ArrayList<String> selectedProjs = new ArrayList<>(lstProject.getSelectedValuesList());
+
+		        boolean notDept = chckbxNotDept.isSelected();
+		        boolean notProj = chckbxNotProject.isSelected();
+
+		        ArrayList<String> employees = db.searchEmployees(selectedDepts, notDept, selectedProjs, notProj);
+
+		        textAreaEmployee.setText("");
+		        for (String emp : employees) {
+		            textAreaEmployee.append(emp + "\n");
+		        }
+		    }
 		});
 		btnSearch.setBounds(80, 276, 89, 23);
 		contentPane.add(btnSearch);
@@ -153,6 +177,7 @@ public class EmployeeSearchFrame extends JFrame {
 		textAreaEmployee = new JTextArea();
 		textAreaEmployee.setLineWrap(true);
 		textAreaEmployee.setWrapStyleWord(true);
+		textAreaEmployee.setEditable(false);
 
 		JScrollPane scrollEmp = new JScrollPane(textAreaEmployee);
 		scrollEmp.setBounds(36, 197, 339, 80);
